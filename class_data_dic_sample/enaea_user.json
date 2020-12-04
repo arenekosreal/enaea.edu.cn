@@ -1,0 +1,17 @@
+{
+    "isDescendantUserWithoutAuth": false,
+    "screenName": "手动打码",
+    "shareFrom": "用户名的base64编码",
+    "organizationId": 7,
+    "isInternal": false,
+    "isEmailActive": false,
+    "isAverageUser": true,
+    "username": "用户名",
+    "email": "手动打码",
+    "photoUrl": "https://手动打码",
+    "success": true,
+    "isDescendantUserWithAuth": false,
+    "isSuperOrganizationManager": false,
+    "id": 1,
+    "result": null
+}
