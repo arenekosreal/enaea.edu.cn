@@ -305,7 +305,7 @@ def process_courses(courses:list):
             if status.is_required==False and bool(conf["process_extra"])==False:
                 logging.info("课程 %s 的 %s 部分由于非必修并且程序设置为不处理非必修部分而跳过" %(course.cluster_name,status.syllabus_name))
                 continue
-            for detail in status.get_details():
+            for detail in status.get_details(circle_id=course.circle_id):
                 logging.info("正在处理小节 %s" %detail.remark)
                 for video in detail.get_videos():
                     logging.info("正在处理视频 %s" %video.title)
