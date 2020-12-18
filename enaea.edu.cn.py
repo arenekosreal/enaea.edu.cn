@@ -190,7 +190,7 @@ class enaea_course_detail():
         logging.info("已获得视频分段数量：%d" %video_count)
         video_list=course_json["result"]["list"]
         for video in video_list:
-            videos.append(enaea_video(data_dic=video))
+            videos.append(enaea_video(data_dic=video,circle_id=circle_id,course_id=course_id))
         return videos
 def login(session=re_session,auto_login=False) -> tuple:
     logging.info("正在开始登陆账号")
@@ -216,6 +216,7 @@ def login(session=re_session,auto_login=False) -> tuple:
         post_re=session.get("https://passport.enaea.edu.cn/login.do",params=login_data,headers=login_header)
     except:
         logging.error("登陆失败，和服务器通信出错，请检查网络连接")
+        exit(-1)
     else:
         return_text=post_re.text
         json_str=return_text.replace(able_sky,"").replace("(","").replace(")","").replace(";","")
@@ -227,7 +228,7 @@ def login(session=re_session,auto_login=False) -> tuple:
             answer=input("登陆失败，是否重试？Y/n:").upper()
             if answer=="Y":
                 logging.info("正在重新登陆")
-                login()
+                login(session=session,auto_login=auto_login)
             elif answer=="N":
                 logging.info("已选择退出")
                 exit(0)
@@ -239,10 +240,7 @@ def process_study_log(video:enaea_video):
     post_data={"id":video.id,"circleId":video.circle_id,"finish":False,"ct":get_time_stamp()}
     log_post=re_session.post("http://study.enaea.edu.cn/studyLog.do",data=post_data)   
     log_json=log_post.json()  
-    if log_json["success"]==True:
-        return log_json["process"]
-    else:
-        return None  
+    return log_json["process"]
 def post_client(video:enaea_video,app_id:str="9E625CB43DE747D0"): 
     cdns=["cd15-ccd1-2.play.bokecc.com"]
     cookies=dict_from_cookiejar(re_session.cookies)
@@ -269,7 +267,6 @@ def post_client(video:enaea_video,app_id:str="9E625CB43DE747D0"):
                 "blocktimes":0,
                 "blockduration":0}
     re_session.post("https://logger.csslcloud.net/event/vod/v1/client",data=post_data,headers=post_header)
-    logging.debug("已发送心跳数据")
 def get_status() -> list:
     logging.info("正在开始获取课程列表")
     time_stamp=get_time_stamp()
@@ -307,7 +304,7 @@ def process_courses(courses:list):
                 continue
             for detail in status.get_details(circle_id=course.circle_id):
                 logging.info("正在处理小节 %s" %detail.remark)
-                for video in detail.get_videos():
+                for video in detail.get_videos(circle_id=course.circle_id,course_id=detail.course_id):
                     logging.info("正在处理视频 %s" %video.title)
                     if video.is_finished==True:
                         logging.info("视频 %s 已完成" %video.title)
@@ -321,14 +318,14 @@ def process_courses(courses:list):
                         for i in range(6):
                             post_client(video=video)
                             time.sleep(10.0)
+                            logging.debug("1分钟内第 %d 次推送心跳数据" %int(i+1))
                         progress=process_study_log(video=video)
                         logging.debug("已向服务器推送防弹窗数据")
-                        if progress==None:
-                            logging.debug("进度未达到100，继续处理")
-                            continue
                         if progress==100:
-                            logging.debug("进度已达到100，终止处理")
+                            logging.debug("进度为 %d 已达到100，终止处理" %progress)
                             break
+                        else:
+                            logging.debug("进度为 %d 未达到100，继续处理" %progress)
     logging.info("全部课程处理完成")
 if __name__=="__main__":
     start_time=time.time()
